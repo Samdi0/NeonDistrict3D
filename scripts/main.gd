@@ -62,6 +62,7 @@ func _build_environment() -> void:
     sun.light_energy = 0.28
     add_child(sun)
 
+    # A single continuous collision floor supports walking and driving across all streets.
     var floor_body := StaticBody3D.new()
     floor_body.position = Vector3(0, -0.6, 0)
     var floor_mesh := MeshInstance3D.new()
@@ -104,7 +105,8 @@ func _build_city() -> void:
 func _create_building(center: Vector3, width: float, height: float, depth: float, base_color: Color, neon: Color) -> void:
     _add_solid_box(center + Vector3(0, height * 0.5, 0), Vector3(width, height, depth), base_color)
     # Roof cap, facade bands, illuminated windows and vertical neon signage.
-    _add_box(center + Vector3(0, height + 0.18, 0), Vector3(width + 0.7, 0.36, depth + 0.7), Color(0.025, 0.035, 0.08))
+    # Roof is a separate solid body so its overhang also blocks the player.
+    _add_solid_box(center + Vector3(0, height + 0.18, 0), Vector3(width + 0.7, 0.36, depth + 0.7), Color(0.025, 0.035, 0.08))
     for floor_index in range(1, int(height / 3.8)):
         var y := floor_index * 3.8
         _add_box(center + Vector3(0, y, depth * 0.5 + 0.035), Vector3(width * 0.88, 0.12, 0.07), neon, true)
