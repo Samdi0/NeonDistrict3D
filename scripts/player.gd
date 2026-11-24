@@ -46,20 +46,13 @@ func _make_player() -> void:
     _add_character_part(CapsuleMesh.new(), Vector3(-0.48, 1.15, 0), Vector3(0.2, 0.68, 0.2), torso_mat)
     _add_character_part(CapsuleMesh.new(), Vector3(0.48, 1.15, 0), Vector3(0.2, 0.68, 0.2), torso_mat)
     _add_character_part(BoxMesh.new(), Vector3(0, 0.12, -0.08), Vector3(0.75, 0.2, 0.95), pants_mat)
-    var col := CollisionShape3D.new()
-    var shape := CapsuleShape3D.new()
-    shape.radius = 0.42
-    shape.height = 1.8
-    col.shape = shape
-    col.position.y = 0.9
-    add_child(col)
-    var col := CollisionShape3D.new()
-    var shape := CapsuleShape3D.new()
-    shape.radius = 0.42
-    shape.height = 1.8
-    col.shape = shape
-    col.position.y = 0.9
-    add_child(col)
+    var body_collision := CollisionShape3D.new()
+    var body_shape := CapsuleShape3D.new()
+    body_shape.radius = 0.42
+    body_shape.height = 1.8
+    body_collision.shape = body_shape
+    body_collision.position.y = 0.9
+    add_child(body_collision)
 
 func _character_material(color: Color, glow := false) -> StandardMaterial3D:
     var material := StandardMaterial3D.new()
