@@ -6,21 +6,35 @@ var is_police := false
 var wander_dir := Vector3.ZERO
 var change_timer := 0.0
 var attack_timer := 0.0
+var visual_root: Node3D
+var visual_animation: AnimationPlayer
 
 func _ready() -> void:
     add_to_group("people")
-    var outfit_color := Color(0.035, 0.12, 0.55) if is_police else (Color(0.72, 0.08, 0.19) if is_hostile else [Color(0.08, 0.42, 0.5), Color(0.48, 0.22, 0.62), Color(0.72, 0.42, 0.12), Color(0.16, 0.42, 0.25)].pick_random())
-    var skin := _npc_material(Color(0.68, 0.45, 0.32))
-    var outfit := _npc_material(outfit_color, is_police or is_hostile)
-    var trousers := _npc_material(Color(0.035, 0.045, 0.085))
-    _npc_part(CapsuleMesh.new(), Vector3(0, 1.0, 0), Vector3(0.72, 0.8, 0.42), outfit)
-    _npc_part(SphereMesh.new(), Vector3(0, 1.62, 0), Vector3(0.44, 0.48, 0.42), skin)
-    _npc_part(CapsuleMesh.new(), Vector3(-0.2, 0.42, 0), Vector3(0.22, 0.65, 0.23), trousers)
-    _npc_part(CapsuleMesh.new(), Vector3(0.2, 0.42, 0), Vector3(0.22, 0.65, 0.23), trousers)
-    _npc_part(CapsuleMesh.new(), Vector3(-0.43, 1.0, 0), Vector3(0.18, 0.62, 0.18), outfit)
-    _npc_part(CapsuleMesh.new(), Vector3(0.43, 1.0, 0), Vector3(0.18, 0.62, 0.18), outfit)
-    if is_police:
-        _npc_part(BoxMesh.new(), Vector3(0, 1.9, 0), Vector3(0.5, 0.12, 0.48), _npc_material(Color(0.04, 0.18, 0.95), true))
+    visual_root = Node3D.new()
+    visual_root.name = "CharacterVisual"
+    add_child(visual_root)
+    var model_path := "res://assets/models/npc.glb"
+    if ResourceLoader.exists(model_path):
+        var packed := load(model_path) as PackedScene
+        if packed:
+            var imported := packed.instantiate()
+            visual_root.add_child(imported)
+            visual_animation = _find_animation_player(imported)
+            _play_visual_animation(["Idle", "idle"])
+    else:
+        var outfit_color := Color(0.035, 0.12, 0.55) if is_police else (Color(0.72, 0.08, 0.19) if is_hostile else [Color(0.08, 0.42, 0.5), Color(0.48, 0.22, 0.62), Color(0.72, 0.42, 0.12), Color(0.16, 0.42, 0.25)].pick_random())
+        var skin := _npc_material(Color(0.68, 0.45, 0.32))
+        var outfit := _npc_material(outfit_color, is_police or is_hostile)
+        var trousers := _npc_material(Color(0.035, 0.045, 0.085))
+        _npc_part(CapsuleMesh.new(), Vector3(0, 1.0, 0), Vector3(0.72, 0.8, 0.42), outfit)
+        _npc_part(SphereMesh.new(), Vector3(0, 1.62, 0), Vector3(0.44, 0.48, 0.42), skin)
+        _npc_part(CapsuleMesh.new(), Vector3(-0.2, 0.42, 0), Vector3(0.22, 0.65, 0.23), trousers)
+        _npc_part(CapsuleMesh.new(), Vector3(0.2, 0.42, 0), Vector3(0.22, 0.65, 0.23), trousers)
+        _npc_part(CapsuleMesh.new(), Vector3(-0.43, 1.0, 0), Vector3(0.18, 0.62, 0.18), outfit)
+        _npc_part(CapsuleMesh.new(), Vector3(0.43, 1.0, 0), Vector3(0.18, 0.62, 0.18), outfit)
+        if is_police:
+            _npc_part(BoxMesh.new(), Vector3(0, 1.9, 0), Vector3(0.5, 0.12, 0.48), _npc_material(Color(0.04, 0.18, 0.95), true))
     var col := CollisionShape3D.new()
     var shape := CapsuleShape3D.new()
     shape.radius = 0.32
@@ -29,6 +43,24 @@ func _ready() -> void:
     col.position.y = 0.78
     add_child(col)
     _choose_direction()
+
+func _find_animation_player(root: Node) -> AnimationPlayer:
+    if root is AnimationPlayer:
+        return root
+    for child in root.get_children():
+        var found := _find_animation_player(child)
+        if found:
+            return found
+    return null
+
+func _play_visual_animation(candidates: Array[String]) -> void:
+    if not visual_animation:
+        return
+    for candidate in candidates:
+        if visual_animation.has_animation(candidate):
+            if visual_animation.current_animation != candidate:
+                visual_animation.play(candidate)
+            return
 
 func _npc_material(color: Color, glow := false) -> StandardMaterial3D:
     var material := StandardMaterial3D.new()
@@ -45,7 +77,7 @@ func _npc_part(mesh_resource: PrimitiveMesh, part_position: Vector3, part_scale:
     part.position = part_position
     part.scale = part_scale
     part.material_override = material
-    add_child(part)
+    visual_root.add_child(part)
 
 func _physics_process(delta: float) -> void:
     change_timer -= delta
@@ -59,6 +91,11 @@ func _physics_process(delta: float) -> void:
             if attack_timer <= 0.0 and global_position.distance_to(player.global_position) < 1.8:
                 player.set("health", max(0, int(player.get("health")) - (5 if is_police else 3)))
                 attack_timer = 1.0
+    if wander_dir.length() > 0.1:
+        visual_root.rotation.y = atan2(wander_dir.x, wander_dir.z)
+        _play_visual_animation(["Run", "run", "Jog", "jog"] if is_hostile else ["Walk", "walk", "Jog", "jog"])
+    else:
+        _play_visual_animation(["Idle", "idle"])
     velocity.x = wander_dir.x * (2.8 if is_hostile else 1.5)
     velocity.z = wander_dir.z * (2.8 if is_hostile else 1.5)
     if not is_on_floor():
