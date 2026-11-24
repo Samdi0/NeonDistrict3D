@@ -47,6 +47,7 @@ func _ready() -> void:
     collision.shape = shape
     collision.position.y = 0.7
     add_child(collision)
+    # Keep the vehicle collision independent from visual details (glass, lights and wheels).
 
 func _car_part(mesh_resource: PrimitiveMesh, part_position: Vector3, part_scale: Vector3, color: Color, glow := false) -> void:
     var part := MeshInstance3D.new()
