@@ -1,0 +1,62 @@
+name: Build Windows and Web
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Godot 4.3 and export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT_VERSION=4.3
+          mkdir -p "$HOME/godot" "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          curl -L --fail "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d "$HOME/godot"
+          mv "$HOME/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "$HOME/godot/godot"
+          chmod +x "$HOME/godot/godot"
+          curl -L --fail "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz" -o /tmp/templates.tpz
+          unzip -q /tmp/templates.tpz -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/"
+          echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      - name: Validate project
+        run: godot --headless --editor --path . --quit
+
+      - name: Export Windows desktop
+        run: |
+          mkdir -p build
+          godot --headless --path . --export-release "Windows Desktop" build/NeonDistrict3D.exe
+
+      - name: Export Web
+        run: |
+          mkdir -p build/web
+          godot --headless --path . --export-release Web build/web/index.html
+
+      - name: Package builds
+        run: |
+          cd build
+          zip -qr ../NeonDistrict3D_Windows.zip NeonDistrict3D.exe
+          zip -qr ../NeonDistrict3D_Web.zip web
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeonDistrict3D-Windows
+          path: NeonDistrict3D_Windows.zip
+
+      - name: Upload Web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeonDistrict3D-Web
+          path: NeonDistrict3D_Web.zip
