@@ -98,12 +98,27 @@ func _build_city() -> void:
             var w := randf_range(17.0, 26.0)
             var d := randf_range(17.0, 26.0)
             var base_color := Color.from_hsv(randf_range(0.56, 0.78), randf_range(0.25, 0.55), randf_range(0.16, 0.32))
-            _add_solid_box(center + Vector3(0, h / 2.0, 0), Vector3(w, h, d), base_color)
             var neon := [Color(0.05, 0.8, 1.0), Color(1.0, 0.08, 0.48), Color(0.5, 0.2, 1.0)].pick_random()
-            _add_box(center + Vector3(0, h * 0.55, d / 2.0 + 0.04), Vector3(w * 0.72, 0.22, 0.08), neon, true)
-            _add_box(center + Vector3(w / 2.0 + 0.04, h * 0.3, 0), Vector3(0.08, 0.2, d * 0.7), neon, true)
-            for level in range(1, int(h / 4.0)):
-                _add_box(center + Vector3(0, level * 4.0, d / 2.0 + 0.05), Vector3(w * 0.65, 0.08, 0.06), Color(0.12, 0.55, 0.8), true)
+            _create_building(center, w, h, d, base_color, neon)
+
+func _create_building(center: Vector3, width: float, height: float, depth: float, base_color: Color, neon: Color) -> void:
+    _add_solid_box(center + Vector3(0, height * 0.5, 0), Vector3(width, height, depth), base_color)
+    # Roof cap, facade bands, illuminated windows and vertical neon signage.
+    _add_box(center + Vector3(0, height + 0.18, 0), Vector3(width + 0.7, 0.36, depth + 0.7), Color(0.025, 0.035, 0.08))
+    for floor_index in range(1, int(height / 3.8)):
+        var y := floor_index * 3.8
+        _add_box(center + Vector3(0, y, depth * 0.5 + 0.035), Vector3(width * 0.88, 0.12, 0.07), neon, true)
+        var window_count := maxi(2, int(width / 3.2))
+        for window_index in range(window_count):
+            var x := -width * 0.38 + float(window_index) * (width * 0.76 / float(window_count - 1))
+            var window_color := Color(0.08, 0.65, 0.95) if (window_index + floor_index) % 3 != 0 else Color(1.0, 0.48, 0.12)
+            _add_box(center + Vector3(x, y + 1.0, depth * 0.5 + 0.045), Vector3(1.15, 1.55, 0.08), window_color, true)
+            _add_box(center + Vector3(x, y + 1.0, -depth * 0.5 - 0.045), Vector3(1.15, 1.55, 0.08), window_color, true)
+    _add_box(center + Vector3(width * 0.5 + 0.045, height * 0.48, 0), Vector3(0.08, 0.22, depth * 0.76), neon, true)
+    _add_box(center + Vector3(-width * 0.5 - 0.045, height * 0.48, 0), Vector3(0.08, 0.22, depth * 0.76), neon, true)
+    # Ground-floor entrance and sign.
+    _add_box(center + Vector3(0, 1.25, depth * 0.5 + 0.07), Vector3(1.8, 2.5, 0.12), Color(0.015, 0.09, 0.14), true)
+    _add_box(center + Vector3(0, 2.8, depth * 0.5 + 0.12), Vector3(width * 0.55, 0.3, 0.16), neon, true)
 
 func _spawn_cars() -> void:
     # Cars are placed on nearby streets as well as farther city roads.
