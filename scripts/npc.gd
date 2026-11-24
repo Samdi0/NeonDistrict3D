@@ -9,16 +9,18 @@ var attack_timer := 0.0
 
 func _ready() -> void:
     add_to_group("people")
-    var mesh := MeshInstance3D.new()
-    var capsule := CapsuleMesh.new()
-    capsule.radius = 0.32
-    capsule.height = 1.55
-    mesh.mesh = capsule
-    mesh.position.y = 0.78
-    var mat := StandardMaterial3D.new()
-    mat.albedo_color = Color(0.05, 0.25, 1.0) if is_police else (Color(0.85, 0.12, 0.38) if is_hostile else Color(0.7, 0.75, 0.85))
-    mesh.material_override = mat
-    add_child(mesh)
+    var outfit_color := Color(0.035, 0.12, 0.55) if is_police else (Color(0.72, 0.08, 0.19) if is_hostile else [Color(0.08, 0.42, 0.5), Color(0.48, 0.22, 0.62), Color(0.72, 0.42, 0.12), Color(0.16, 0.42, 0.25)].pick_random())
+    var skin := _npc_material(Color(0.68, 0.45, 0.32))
+    var outfit := _npc_material(outfit_color, is_police or is_hostile)
+    var trousers := _npc_material(Color(0.035, 0.045, 0.085))
+    _npc_part(CapsuleMesh.new(), Vector3(0, 1.0, 0), Vector3(0.72, 0.8, 0.42), outfit)
+    _npc_part(SphereMesh.new(), Vector3(0, 1.62, 0), Vector3(0.44, 0.48, 0.42), skin)
+    _npc_part(CapsuleMesh.new(), Vector3(-0.2, 0.42, 0), Vector3(0.22, 0.65, 0.23), trousers)
+    _npc_part(CapsuleMesh.new(), Vector3(0.2, 0.42, 0), Vector3(0.22, 0.65, 0.23), trousers)
+    _npc_part(CapsuleMesh.new(), Vector3(-0.43, 1.0, 0), Vector3(0.18, 0.62, 0.18), outfit)
+    _npc_part(CapsuleMesh.new(), Vector3(0.43, 1.0, 0), Vector3(0.18, 0.62, 0.18), outfit)
+    if is_police:
+        _npc_part(BoxMesh.new(), Vector3(0, 1.9, 0), Vector3(0.5, 0.12, 0.48), _npc_material(Color(0.04, 0.18, 0.95), true))
     var col := CollisionShape3D.new()
     var shape := CapsuleShape3D.new()
     shape.radius = 0.32
@@ -27,6 +29,23 @@ func _ready() -> void:
     col.position.y = 0.78
     add_child(col)
     _choose_direction()
+
+func _npc_material(color: Color, glow := false) -> StandardMaterial3D:
+    var material := StandardMaterial3D.new()
+    material.albedo_color = color
+    material.roughness = 0.7
+    if glow:
+        material.emission_enabled = true
+        material.emission = color * 0.25
+    return material
+
+func _npc_part(mesh_resource: PrimitiveMesh, part_position: Vector3, part_scale: Vector3, material: Material) -> void:
+    var part := MeshInstance3D.new()
+    part.mesh = mesh_resource
+    part.position = part_position
+    part.scale = part_scale
+    part.material_override = material
+    add_child(part)
 
 func _physics_process(delta: float) -> void:
     change_timer -= delta
