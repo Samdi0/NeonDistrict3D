@@ -150,6 +150,8 @@ func _spawn_people() -> void:
             var road := [-42.0, 0.0, 42.0].pick_random()
             npc.position = Vector3(road + randf_range(-3.0, 3.0), 0.1, randf_range(-38.0, 38.0))
         npc.is_hostile = randf() < 0.3
+        npc.is_police = false
+        npc.archetype_id = randi_range(1, 52)
         add_child(npc)
 
 func _spawn_player() -> void:
