@@ -7,6 +7,7 @@ var mouse_sensitivity := 0.0025
 var camera_pivot: Node3D
 var camera: Camera3D
 var body_mesh: Node3D
+var visual_animation: AnimationPlayer
 var current_car: Variant
 var main_world: Variant
 var attack_cooldown := 0.0
@@ -36,6 +37,17 @@ func _setup_input() -> void:
 
 func _make_player() -> void:
     body_mesh = Node3D.new()
+    body_mesh.name = "CharacterVisual"
+    add_child(body_mesh)
+    var model_path := "res://assets/models/player.glb"
+    if ResourceLoader.exists(model_path):
+        var packed := load(model_path) as PackedScene
+        if packed:
+            var imported := packed.instantiate()
+            body_mesh.add_child(imported)
+            visual_animation = _find_animation_player(imported)
+            _play_visual_animation(["Idle", "idle"])
+            return
     var torso_mat := _character_material(Color(0.025, 0.48, 0.62), true)
     var pants_mat := _character_material(Color(0.025, 0.035, 0.09))
     var skin_mat := _character_material(Color(0.72, 0.48, 0.34))
@@ -46,13 +58,24 @@ func _make_player() -> void:
     _add_character_part(CapsuleMesh.new(), Vector3(-0.48, 1.15, 0), Vector3(0.2, 0.68, 0.2), torso_mat)
     _add_character_part(CapsuleMesh.new(), Vector3(0.48, 1.15, 0), Vector3(0.2, 0.68, 0.2), torso_mat)
     _add_character_part(BoxMesh.new(), Vector3(0, 0.12, -0.08), Vector3(0.75, 0.2, 0.95), pants_mat)
-    var body_collision := CollisionShape3D.new()
-    var body_shape := CapsuleShape3D.new()
-    body_shape.radius = 0.42
-    body_shape.height = 1.8
-    body_collision.shape = body_shape
-    body_collision.position.y = 0.9
-    add_child(body_collision)
+
+func _find_animation_player(root: Node) -> AnimationPlayer:
+    if root is AnimationPlayer:
+        return root
+    for child in root.get_children():
+        var found := _find_animation_player(child)
+        if found:
+            return found
+    return null
+
+func _play_visual_animation(candidates: Array[String]) -> void:
+    if not visual_animation:
+        return
+    for candidate in candidates:
+        if visual_animation.has_animation(candidate):
+            if visual_animation.current_animation != candidate:
+                visual_animation.play(candidate)
+            return
 
 func _character_material(color: Color, glow := false) -> StandardMaterial3D:
     var material := StandardMaterial3D.new()
@@ -69,7 +92,7 @@ func _add_character_part(mesh_resource: PrimitiveMesh, part_position: Vector3, p
     part.position = part_position
     part.scale = part_scale
     part.material_override = material
-    add_child(part)
+    body_mesh.add_child(part)
 
 func _make_camera() -> void:
     camera_pivot = Node3D.new()
@@ -150,6 +173,9 @@ func _physics_process(delta: float) -> void:
         velocity.y = -0.2
     if direction.length() > 0.1:
         body_mesh.rotation.y = atan2(direction.x, direction.z)
+        _play_visual_animation(["Run", "run", "Jog", "jog"] if run_speed > speed else ["Walk", "walk", "Jog", "jog"])
+    else:
+        _play_visual_animation(["Idle", "idle"])
     move_and_slide()
 
 func _toggle_camera() -> void:
@@ -208,6 +234,7 @@ func _shoot() -> void:
     if ammo <= 0 or current_car:
         return
     ammo -= 1
+    _play_visual_animation(["Shoot", "shoot", "Rifle_Aim_Shoot", "Pistol_Shoot"])
     var from := camera.global_position
     var to := from + -camera.global_basis.z * 160.0
     var query := PhysicsRayQueryParameters3D.create(from, to)
@@ -227,6 +254,7 @@ func _punch() -> void:
     if attack_cooldown > 0.0:
         return
     attack_cooldown = 0.55
+    _play_visual_animation(["Punch", "punch", "Melee", "Attack"])
     for npc in get_tree().get_nodes_in_group("people"):
         if global_position.distance_to(npc.global_position) < 2.2 and npc.has_method("take_damage"):
             npc.take_damage(35)
