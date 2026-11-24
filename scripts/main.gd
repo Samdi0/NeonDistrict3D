@@ -98,7 +98,7 @@ func _build_city() -> void:
             var w := randf_range(17.0, 26.0)
             var d := randf_range(17.0, 26.0)
             var base_color := Color.from_hsv(randf_range(0.56, 0.78), randf_range(0.25, 0.55), randf_range(0.16, 0.32))
-            _add_box(center + Vector3(0, h / 2.0, 0), Vector3(w, h, d), base_color)
+            _add_solid_box(center + Vector3(0, h / 2.0, 0), Vector3(w, h, d), base_color)
             var neon := [Color(0.05, 0.8, 1.0), Color(1.0, 0.08, 0.48), Color(0.5, 0.2, 1.0)].pick_random()
             _add_box(center + Vector3(0, h * 0.55, d / 2.0 + 0.04), Vector3(w * 0.72, 0.22, 0.08), neon, true)
             _add_box(center + Vector3(w / 2.0 + 0.04, h * 0.3, 0), Vector3(0.08, 0.2, d * 0.7), neon, true)
@@ -106,19 +106,33 @@ func _build_city() -> void:
                 _add_box(center + Vector3(0, level * 4.0, d / 2.0 + 0.05), Vector3(w * 0.65, 0.08, 0.06), Color(0.12, 0.55, 0.8), true)
 
 func _spawn_cars() -> void:
+    # Cars are placed on nearby streets as well as farther city roads.
     for i in range(18):
-        var car = CharacterBody3D.new()
+        var car: CharacterBody3D = CharacterBody3D.new()
         car.set_script(CarScript)
-        car.position = Vector3(randf_range(-190, 190), 0.2, randf_range(-190, 190))
+        if i < 8:
+            var lane := [-42.0, 0.0, 42.0].pick_random()
+            if randf() < 0.5:
+                car.position = Vector3(lane + randf_range(-2.0, 2.0), 0.2, randf_range(-38.0, 38.0))
+            else:
+                car.position = Vector3(randf_range(-38.0, 38.0), 0.2, lane + randf_range(-2.0, 2.0))
+        else:
+            var road := randi_range(-5, 5) * 42.0
+            car.position = Vector3(road + randf_range(-2.0, 2.0), 0.2, randf_range(-190.0, 190.0))
         car.rotation.y = [0.0, PI / 2.0].pick_random()
         add_child(car)
 
 func _spawn_people() -> void:
+    # Keep a visible population near the starting area; the rest populate nearby blocks.
     for i in range(34):
-        var npc: Variant = CharacterBody3D.new()
+        var npc: CharacterBody3D = CharacterBody3D.new()
         npc.set_script(NPCScript)
-        npc.position = Vector3(randf_range(-190, 190), 0.1, randf_range(-190, 190))
-        npc.is_hostile = randf() < 0.25
+        if i < 18:
+            npc.position = Vector3(randf_range(-13.0, 13.0), 0.1, randf_range(-13.0, 13.0))
+        else:
+            var road := [-42.0, 0.0, 42.0].pick_random()
+            npc.position = Vector3(road + randf_range(-3.0, 3.0), 0.1, randf_range(-38.0, 38.0))
+        npc.is_hostile = randf() < 0.3
         add_child(npc)
 
 func _spawn_player() -> void:
@@ -198,7 +212,7 @@ func _build_locations() -> void:
     ]
     for place in locations:
         var pos: Vector3 = place.position
-        _add_box(pos + Vector3(0, 2, 0), Vector3(8, 4, 7), Color(0.035, 0.07, 0.13))
+        _add_solid_box(pos + Vector3(0, 2, 0), Vector3(8, 4, 7), Color(0.035, 0.07, 0.13))
         _add_box(pos + Vector3(0, 3.2, 3.56), Vector3(5.5, 0.35, 0.12), Color(0.05, 0.9, 1.0), true)
         var area := Area3D.new()
         area.name = str(place.name)
@@ -370,6 +384,17 @@ func award(amount: int) -> void:
 func _add_box(pos: Vector3, size: Vector3, color: Color, emissive := false) -> void:
     var n := _box(pos, size, color, emissive)
     add_child(n)
+
+func _add_solid_box(pos: Vector3, size: Vector3, color: Color, emissive := false) -> void:
+    var body := StaticBody3D.new()
+    body.position = pos
+    body.add_child(_box(Vector3.ZERO, size, color, emissive))
+    var collision := CollisionShape3D.new()
+    var shape := BoxShape3D.new()
+    shape.size = size
+    collision.shape = shape
+    body.add_child(collision)
+    add_child(body)
 
 func _box(pos: Vector3, size: Vector3, color: Color, emissive := false) -> MeshInstance3D:
     var mesh := BoxMesh.new()
