@@ -37,7 +37,7 @@ func _physics_process(delta: float) -> void:
         var player := get_tree().get_first_node_in_group("player")
         if player and global_position.distance_to(player.global_position) < (28.0 if is_police else 16.0):
             wander_dir = (player.global_position - global_position).normalized()
-            if attack_timer <= 0.0:
+            if attack_timer <= 0.0 and global_position.distance_to(player.global_position) < 1.8:
                 player.set("health", max(0, int(player.get("health")) - (5 if is_police else 3)))
                 attack_timer = 1.0
     velocity.x = wander_dir.x * (2.8 if is_hostile else 1.5)
