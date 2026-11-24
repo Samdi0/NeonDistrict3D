@@ -6,7 +6,7 @@ var speed := 7.0
 var mouse_sensitivity := 0.0025
 var camera_pivot: Node3D
 var camera: Camera3D
-var body_mesh: MeshInstance3D
+var body_mesh: Node3D
 var current_car: Variant
 var main_world: Variant
 var attack_cooldown := 0.0
@@ -35,7 +35,7 @@ func _setup_input() -> void:
         InputMap.action_add_event(action, key_event)
 
 func _make_player() -> void:
-    body_mesh = Node3D.new() as MeshInstance3D
+    body_mesh = Node3D.new()
     var torso_mat := _character_material(Color(0.025, 0.48, 0.62), true)
     var pants_mat := _character_material(Color(0.025, 0.035, 0.09))
     var skin_mat := _character_material(Color(0.72, 0.48, 0.34))
