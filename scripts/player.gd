@@ -35,18 +35,17 @@ func _setup_input() -> void:
         InputMap.action_add_event(action, key_event)
 
 func _make_player() -> void:
-    var capsule := CapsuleMesh.new()
-    capsule.radius = 0.42
-    capsule.height = 1.8
-    body_mesh = MeshInstance3D.new()
-    body_mesh.mesh = capsule
-    body_mesh.position.y = 0.9
-    var mat := StandardMaterial3D.new()
-    mat.albedo_color = Color(0.04, 0.75, 0.9)
-    mat.emission_enabled = true
-    mat.emission = Color(0.02, 0.2, 0.28)
-    body_mesh.material_override = mat
-    add_child(body_mesh)
+    body_mesh = Node3D.new() as MeshInstance3D
+    var torso_mat := _character_material(Color(0.025, 0.48, 0.62), true)
+    var pants_mat := _character_material(Color(0.025, 0.035, 0.09))
+    var skin_mat := _character_material(Color(0.72, 0.48, 0.34))
+    _add_character_part(CapsuleMesh.new(), Vector3(0, 1.15, 0), Vector3(0.72, 0.85, 0.42), torso_mat)
+    _add_character_part(SphereMesh.new(), Vector3(0, 1.78, 0), Vector3(0.48, 0.52, 0.46), skin_mat)
+    _add_character_part(CapsuleMesh.new(), Vector3(-0.22, 0.48, 0), Vector3(0.22, 0.72, 0.24), pants_mat)
+    _add_character_part(CapsuleMesh.new(), Vector3(0.22, 0.48, 0), Vector3(0.22, 0.72, 0.24), pants_mat)
+    _add_character_part(CapsuleMesh.new(), Vector3(-0.48, 1.15, 0), Vector3(0.2, 0.68, 0.2), torso_mat)
+    _add_character_part(CapsuleMesh.new(), Vector3(0.48, 1.15, 0), Vector3(0.2, 0.68, 0.2), torso_mat)
+    _add_character_part(BoxMesh.new(), Vector3(0, 0.12, -0.08), Vector3(0.75, 0.2, 0.95), pants_mat)
     var col := CollisionShape3D.new()
     var shape := CapsuleShape3D.new()
     shape.radius = 0.42
@@ -54,6 +53,30 @@ func _make_player() -> void:
     col.shape = shape
     col.position.y = 0.9
     add_child(col)
+    var col := CollisionShape3D.new()
+    var shape := CapsuleShape3D.new()
+    shape.radius = 0.42
+    shape.height = 1.8
+    col.shape = shape
+    col.position.y = 0.9
+    add_child(col)
+
+func _character_material(color: Color, glow := false) -> StandardMaterial3D:
+    var material := StandardMaterial3D.new()
+    material.albedo_color = color
+    material.roughness = 0.62
+    if glow:
+        material.emission_enabled = true
+        material.emission = color * 0.35
+    return material
+
+func _add_character_part(mesh_resource: PrimitiveMesh, part_position: Vector3, part_scale: Vector3, material: Material) -> void:
+    var part := MeshInstance3D.new()
+    part.mesh = mesh_resource
+    part.position = part_position
+    part.scale = part_scale
+    part.material_override = material
+    add_child(part)
 
 func _make_camera() -> void:
     camera_pivot = Node3D.new()
