@@ -1,49 +1,37 @@
-# 3D model asset slots — NEON DISTRICT 3D
+# NEON DISTRICT 3D — Character asset import
 
-This project now supports imported glTF 2.0 / GLB scenes. Put the licensed files in this folder with these exact names:
+## Copyright-safe character direction
 
-| File | Used by | Required content |
-|---|---|---|
-| `player.glb` | Player | Humanoid skinned mesh, skeleton, materials and an AnimationPlayer |
-| `npc.glb` | Pedestrians, hostile NPCs and police | Humanoid skinned mesh, skeleton, materials and an AnimationPlayer |
-| `car.glb` | Drivable vehicles | Vehicle body, wheels and materials |
+Do **not** copy, rip, extract, convert, or redistribute GTA V / Rockstar pedestrian models, protagonist models, textures, voices, logos, or animations. The GTA V NPC roster and its specific models are Rockstar copyrighted game assets. This project instead uses original character identities and independently licensed assets with a distinct visual design.
 
-If a file is absent, the game keeps its procedural fallback. Character collisions are separate Godot physics shapes and remain active when a GLB is loaded. Imported mesh geometry is visual; it does not automatically become a physics collider.
+The current code supports up to 52 character variants per role using these optional paths:
 
-## Animation clip names
+- `res://assets/models/npcs/civilian_01.glb` … `civilian_52.glb`
+- `res://assets/models/npcs/hostile_01.glb` … `hostile_52.glb`
+- `res://assets/models/npcs/police_01.glb` … `police_52.glb`
 
-The scripts look for the first matching clip name in the imported AnimationPlayer:
+Each GLB should include a textured skinned humanoid, skeleton and AnimationPlayer. Keep the existing Godot CharacterBody3D and capsule collider as the gameplay root; the GLB is visual-only. The loader falls back to `assets/models/npc.glb`, then to procedural visuals if a role variant is absent.
 
-- Idle: `Idle` or `idle`
-- Walking: `Walk`, `walk`, `Jog`, `jog`
-- Running: `Run`, `run`, `Jog`, `jog`
-- Shooting: `Shoot`, `shoot`, `Rifle_Aim_Shoot`, `Pistol_Shoot`
-- Melee: `Punch`, `punch`, `Melee`, `Attack`
+## Candidate legal source
 
-The animation library in an imported character must already be compatible with that character's skeleton. Godot will not automatically retarget an unrelated rig just because the clip has a similar name.
+Quaternius Ultimate Animated Character Pack lists 52 animated, textured characters in FBX, OBJ and Blend formats and marks the pack CC0 on its pack page:
+https://quaternius.com/packs/ultimatedanimatedcharacter.html
 
-## Asset sources and licensing
+Important: the listed download formats are FBX/OBJ/Blend, not GLB. Convert the selected FBX/Blend characters to GLB in Blender or import FBX into Godot and validate materials, skeletons and animation clips. Keep the pack's included license file and a dated copy of the source page with the project. Confirm the license attached to the exact downloaded version before commercial release.
 
-Good starting point for a stylized, game-ready CC0 pipeline:
+For locomotion and combat clips, Quaternius Universal Animation Library offers 120+ retarget-friendly humanoid animations for Godot:
+https://quaternius.itch.io/universal-animation-library
 
-- Quaternius Universal Base Characters: https://quaternius.com/packs/universalbasecharacters.html
-- Quaternius Universal Animation Library: https://quaternius.com/packs/universalanimationlibrary.html
-- Quaternius Downtown City MegaKit: https://quaternius.com/packs/downtowncitymegakit.html
-- Quaternius Cars Pack: https://quaternius.com/packs/cars.html
+## Animation naming
 
-Check the current license on each pack page before shipping. Quaternius assets are stylized/low-poly, not photorealistic GTA V assets. They are suitable for a coherent indie-game art style, not a claim of GTA V fidelity.
+Character clips should use one of the names the runtime searches:
+- Idle: `Idle` / `idle`
+- Walk: `Walk` / `walk`
+- Run: `Run` / `run` / `Jog` / `jog`
+- Shoot: `Shoot` / `shoot` / `Rifle_Aim_Shoot` / `Pistol_Shoot`
 
-## 2K PBR texture requirements
+Animation clips must be authored for, or correctly retargeted to, the exact imported skeleton. Merely renaming an incompatible animation does not retarget it.
 
-For the intended high-quality asset pass, use 2048x2048 maps where available:
-- Base Color / Albedo
-- Normal (OpenGL convention for Godot)
-- Roughness
-- Metallic (where appropriate)
-- Ambient Occlusion
+## Current implementation status
 
-Use glTF PBR materials and embed textures in GLB for a self-contained asset. Keep Web/mobile texture variants at 1K or lower to control download size and memory.
-
-## Current status
-
-The GLB loading hooks and animation state selection are implemented. The actual third-party GLB files are **not bundled yet**: this repository currently contains no downloaded character, vehicle or city asset pack. Until the files above are added, procedural visuals remain visible. No claim of 2K textures, fully rigged animation, or GTA V-level realism should be made until those files are installed and tested in Godot.
+The runtime loader and 52-slot role-specific naming convention are implemented. The actual character pack archives and converted GLB assets are **not included in this repository yet**. Therefore the game will still use fallback procedural models until the files are downloaded, converted, checked in, and tested in Godot. No claim is made that GTA V NPC models have been imported.
