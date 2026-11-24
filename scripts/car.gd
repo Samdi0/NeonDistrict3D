@@ -8,6 +8,11 @@ var car_color := Color(0.85, 0.05, 0.3)
 func _ready() -> void:
     add_to_group("cars")
     car_color = [Color(0.85, 0.05, 0.3), Color(0.05, 0.75, 0.95), Color(0.8, 0.55, 0.08), Color(0.35, 0.2, 0.9)].pick_random()
+    var model_path := "res://assets/models/car.glb"
+    if ResourceLoader.exists(model_path):
+        var packed := load(model_path) as PackedScene
+        if packed:
+            add_child(packed.instantiate())
     var body := MeshInstance3D.new()
     var box := BoxMesh.new()
     box.size = Vector3(2.0, 0.75, 4.0)
