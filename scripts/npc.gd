@@ -8,19 +8,27 @@ var change_timer := 0.0
 var attack_timer := 0.0
 var visual_root: Node3D
 var visual_animation: AnimationPlayer
+var archetype_id := 1
+var visual_model_path := ""
 
 func _ready() -> void:
     add_to_group("people")
     visual_root = Node3D.new()
     visual_root.name = "CharacterVisual"
     add_child(visual_root)
-    var model_path := "res://assets/models/npc.glb"
-    if ResourceLoader.exists(model_path):
-        var packed := load(model_path) as PackedScene
+    var role := "police" if is_police else ("hostile" if is_hostile else "civilian")
+    var variant := clampi(archetype_id, 1, 52)
+    visual_model_path = "res://assets/models/npcs/%s_%02d.glb" % [role, variant]
+    if not ResourceLoader.exists(visual_model_path):
+        visual_model_path = "res://assets/models/npc.glb"
+    if ResourceLoader.exists(visual_model_path):
+        var packed := load(visual_model_path) as PackedScene
         if packed:
             var imported := packed.instantiate()
             visual_root.add_child(imported)
             visual_animation = _find_animation_player(imported)
+            # Keep the imported render model aligned to the existing capsule collider.
+            imported.position = Vector3.ZERO
             _play_visual_animation(["Idle", "idle"])
     else:
         var outfit_color := Color(0.035, 0.12, 0.55) if is_police else (Color(0.72, 0.08, 0.19) if is_hostile else [Color(0.08, 0.42, 0.5), Color(0.48, 0.22, 0.62), Color(0.72, 0.42, 0.12), Color(0.16, 0.42, 0.25)].pick_random())
