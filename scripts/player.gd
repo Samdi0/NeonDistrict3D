@@ -24,7 +24,8 @@ func _setup_input() -> void:
         "move_forward": KEY_W,
         "move_back": KEY_S,
         "move_left": KEY_A,
-        "move_right": KEY_D
+        "move_right": KEY_D,
+        "jump": KEY_SPACE
     }
     for action in binds:
         if not InputMap.has_action(action):
@@ -126,7 +127,9 @@ func _physics_process(delta: float) -> void:
     velocity.x = direction.x * run_speed
     velocity.z = direction.z * run_speed
     if not is_on_floor():
-        velocity.y -= 22.0 * delta
+        velocity.y -= 24.0 * delta
+    elif Input.is_action_just_pressed("jump"):
+        velocity.y = 8.5
     else:
         velocity.y = -0.2
     if direction.length() > 0.1:
@@ -190,14 +193,19 @@ func _shoot() -> void:
         return
     ammo -= 1
     var from := camera.global_position
-    var to := from + -camera.global_basis.z * 120.0
+    var to := from + -camera.global_basis.z * 160.0
     var query := PhysicsRayQueryParameters3D.create(from, to)
-    query.exclude = [self]
+    query.exclude = [get_rid()]
+    query.collide_with_areas = false
+    query.collide_with_bodies = true
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
-    if hit and hit.collider.has_method("take_damage"):
-        hit.collider.take_damage(50)
-        if main_world:
-            main_world.add_crime(1)
+    if not hit.is_empty():
+        var target: Object = hit.get("collider")
+        if target and target.has_method("take_damage"):
+            target.take_damage(50)
+            if main_world:
+                main_world.add_crime(1)
+                main_world._notify("Попадание! Осталось патронов: %d" % ammo)
 
 func _punch() -> void:
     if attack_cooldown > 0.0:
